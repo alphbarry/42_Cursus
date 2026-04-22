@@ -10,7 +10,7 @@ This repository contains all the projects I have completed during the 42 Cursus 
 
 The 42 curriculum is a project-based, peer-to-peer program focused on software engineering, low-level programming, and problem solving.
 
-🗂️ Repository Structure
+## 🗂️ Repository Structure
 
 Projects are organized by circles, reflecting the progression of the cursus. Each circle groups projects that develop specific technical skills such as:
 
@@ -37,7 +37,7 @@ ft_transcendence
 
 (Full list available inside each circle directory)
 
-🎯 Objectives
+## 🎯 Objectives
 
 This repository serves as:
 
