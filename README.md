@@ -1,4 +1,4 @@
-🧠 42 Cursus – Common Core
+# 🧠 42 Cursus – Common Core
 
 This repository contains all the projects I have completed during the 42 Cursus at 42 Barcelona, organized by circles following the official Common Core progression.
 
