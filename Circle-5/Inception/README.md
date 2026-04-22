@@ -1,252 +1,470 @@
-*This project has been created as part of the 42 curriculum by alphbarr.*
+# 🐳 Inception - Docker Infrastructure
 
-# Inception
+## 📍 Overview
 
-## Description
+**Inception** is a project in the 42 Cursus that demonstrates Docker containerization and orchestration. It implements a complete web application stack with Nginx, WordPress, and MariaDB running in isolated containers, demonstrating professional DevOps practices, infrastructure as code, and secure deployments.
 
-**Inception** is a system administration project that demonstrates the deployment of a complete web application stack using Docker containers. The project sets up a WordPress website running behind an Nginx reverse proxy with SSL/TLS encryption, all connected to a MariaDB database.
+## 🎯 Objectives
 
-### Goal
+- Master Docker containerization and image creation
+- Implement Docker Compose for multi-container orchestration
+- Design secure deployment architectures
+- Implement SSL/TLS encryption
+- Manage persistent data with Docker volumes
+- Configure service networking and communication
+- Learn infrastructure automation and scripting
+- Implement secrets management best practices
 
-The primary goal of this project is to learn and demonstrate:
-- Containerization concepts using Docker
-- Orchestration with Docker Compose
-- Secure deployment practices (SSL certificates, secrets management)
-- Network configuration and service communication
-- Volume management for data persistence
-- Web server configuration (Nginx with SSL)
-- Database setup and management (MariaDB)
+## 🏗️ Architecture
 
-### Overview
+### Three-Tier Stack
 
-The project implements a three-tier architecture:
-- **Nginx**: Reverse proxy and SSL termination, serving static content and forwarding PHP requests
-- **WordPress**: PHP-FPM application server running WordPress CMS
-- **MariaDB**: Relational database management system storing WordPress data
+```
+┌─────────────────────────────────────────────┐
+│          Docker Network Bridge              │
+├─────────────────────────────────────────────┤
+│                                             │
+│  ┌─────────────────┐   ┌────────────────┐  │
+│  │     Nginx       │   │   WordPress    │  │
+│  │  (Port 443)     │──▶│   (PHP-FPM)    │  │
+│  │  SSL Proxy      │   └────────────────┘  │
+│  │  Static Files   │                       │
+│  └─────────────────┘   ┌────────────────┐  │
+│                        │    MariaDB     │  │
+│                        │    (Port 3306) │  │
+│                        │    (Internal)  │  │
+│                        └────────────────┘  │
+│                                             │
+└─────────────────────────────────────────────┘
+         ▲
+         │ TLS/SSL
+         │ (Port 443)
+         │
+    [Client Browser]
+```
 
-All services run in isolated Docker containers, communicate through a custom bridge network, and use Docker volumes for data persistence.
+### Components
 
-## Instructions
+1. **Nginx** - Web server, reverse proxy, SSL/TLS termination
+2. **WordPress** - Content management system with PHP-FPM
+3. **MariaDB** - Relational database (MySQL compatible)
+
+Each runs in **isolated Docker containers** with:
+- Separate filesystems
+- Network isolation
+- Resource limits
+- Health checks
+
+## 🛠️ Features
+
+### Container Management
+- **Docker Compose Orchestration** - Define entire stack in YAML
+- **Multi-stage Builds** - Optimize images for production
+- **Custom Dockerfiles** - Minimal, production-ready images
+- **Volume Management** - Persistent data across restarts
+- **Health Checks** - Automatic service monitoring
+
+### Security
+- **SSL/TLS Encryption** - HTTPS with self-signed certificates
+- **Secrets Management** - Separate environment variables and passwords
+- **Network Isolation** - Internal bridge network
+- **Access Control** - Service-to-service authentication
+- **Container Hardening** - Minimal base images, no root
+
+### Scalability
+- **Service Restart Policies** - Automatic recovery
+- **Resource Limits** - CPU and memory constraints
+- **Volume Mounting** - Scalable data storage
+- **Environment Configuration** - Easy customization
+
+## 📦 Project Structure
+
+```
+Inception/
+├── Makefile                    # Build automation
+├── README.md                   # This file
+├── USER_DOC.md                 # User documentation
+├── DEV_DOC.md                  # Developer documentation
+├── secrets/
+│   ├── .gitkeep
+│   ├── db_root_password.txt    # MariaDB root password
+│   └── db_password.txt         # WordPress DB password
+├── srcs/
+│   ├── docker-compose.yml      # Compose configuration
+│   ├── Makefile               # Container build targets
+│   └── requirements/
+│       ├── nginx/
+│       │   ├── Dockerfile      # Nginx image definition
+│       │   ├── conf/
+│       │   │   └── nginx.conf  # Nginx configuration
+│       │   └── tools/
+│       │       └── generate_ssl.sh  # SSL certificate generator
+│       ├── wordpress/
+│       │   ├── Dockerfile      # WordPress image definition
+│       │   └── tools/
+│       │       └── wp_setup.sh # WordPress initialization script
+│       └── mariadb/
+│           ├── Dockerfile      # MariaDB image definition
+│           ├── conf/
+│           │   └── my.cnf      # MariaDB configuration
+│           └── tools/
+│               └── init_db.sh  # Database initialization script
+├── .env.example               # Environment variables template
+└── .gitignore                 # Git ignore rules
+```
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Docker Engine (version 20.10 or higher)
-- Docker Compose (v2 recommended, or v1.29+)
+```bash
+# Required
+- Docker Engine (20.10+)
+- Docker Compose (v2 or v1.29+)
 - Git
-- Basic knowledge of Linux command line
+- Linux (Ubuntu 18.04+ recommended) or macOS/WSL2
 
-For detailed Docker installation instructions, see [INSTALL_DOCKER.md](INSTALL_DOCKER.md).
+# Verify installation
+docker --version
+docker compose version
+```
 
-### Quick Start
+### Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd Inception
-   ```
+#### 1. Clone Repository
 
-2. **Set up environment variables:**
-   Create a `.env` file in the `srcs/` directory with the following variables (ensure your administrator username does **not** contain the substring “admin”, per subject rules):
-   ```bash
-   NGINX_PORT=443
-   DOMAIN_NAME=alphbarr.42.fr
-   MYSQL_DATABASE=wordpress
-   MYSQL_USER=wp_alpha
-   WP_TITLE=Inception
-   WP_ADMIN_USER=supervisor
-   WP_ADMIN_EMAIL=supervisor@alphbarr.42.fr
-   WP_USER=editor
-   WP_USER_EMAIL=editor@alphbarr.42.fr
-   ```
-   Adjust `NGINX_PORT` if you need to expose HTTPS on a different port (for example, set it to `3000` if port 443 is unavailable).
-   You can also change it later via `make set-port PORT=3000`, which will recreate the Nginx container automatically.
+```bash
+git clone <repository-url>
+cd Inception
+```
 
-3. **Set up secrets:**
-   Create password files in the `secrets/` directory:
-   ```bash
-   echo "your_secure_db_root_password" > secrets/db_root_password.txt
-   echo "your_secure_db_password" > secrets/db_password.txt
-   ```
+#### 2. Configure Environment Variables
 
-4. **Prepare host directories for Docker named volumes (required):**
-   ```bash
-   mkdir -p /home/alphbarr/data/mariadb
-   mkdir -p /home/alphbarr/data/wordpress
-   ```
-   If your 42 login differs, replace `alphbarr` with your actual login or override `HOST_LOGIN` when running `make` (e.g., `make HOST_LOGIN=jdoe up`).
+```bash
+# Create .env file in srcs/ directory
+cd srcs
 
-5. **Build and start the services:**
-   ```bash
-   make up
-   ```
+# Option A: Copy and edit template
+cp ../.env.example .env
+# Edit .env with your settings
 
-6. **Access the website:**
-   - Website: `https://alphbarr.42.fr` (append `:<NGINX_PORT>` if you change it from 443)
-   - WordPress Admin: `https://alphbarr.42.fr/wp-admin`
-   - Add `127.0.0.1 alphbarr.42.fr` to `/etc/hosts` if testing locally
+# Option B: Create manually
+cat > .env << 'ENDENV'
+NGINX_PORT=443
+DOMAIN_NAME=yourdomain.42.fr
+MYSQL_DATABASE=wordpress
+MYSQL_USER=wp_user
+WP_TITLE=My Website
+WP_ADMIN_USER=admin_user
+WP_ADMIN_EMAIL=admin@yourdomain.42.fr
+WP_USER=editor
+WP_USER_EMAIL=editor@yourdomain.42.fr
+ENDENV
+```
 
-For more detailed instructions, see [USER_DOC.md](USER_DOC.md) and [DEV_DOC.md](DEV_DOC.md).
+⚠️ **Important:** Admin username must NOT contain the substring "admin" (42 requirement)
 
-## Project Description
+#### 3. Create Secrets
 
-### Docker Usage
+```bash
+# Create secrets directory (if doesn't exist)
+cd ..
+mkdir -p secrets
 
-This project leverages Docker for containerization, allowing each service to run in an isolated environment with its own dependencies. Docker containers provide:
+# Add passwords to secret files
+echo "your_secure_db_root_password" > secrets/db_root_password.txt
+echo "your_secure_db_password" > secrets/db_password.txt
 
-- **Isolation**: Each service runs independently with its own filesystem and network namespace
-- **Portability**: The entire stack can run identically on any system with Docker installed
-- **Resource Efficiency**: Containers share the host OS kernel, using less resources than virtual machines
-- **Reproducibility**: Dockerfiles ensure consistent builds across different environments
+# Secure the files
+chmod 600 secrets/*.txt
+```
 
-### Sources Included
+#### 4. Create Host Directories for Volumes
 
-The project structure includes:
+```bash
+# Create directories for persistent storage
+# Replace "your_login" with your actual 42 login
+mkdir -p /home/your_login/data/mariadb
+mkdir -p /home/your_login/data/wordpress
 
-- **`srcs/docker-compose.yml`**: Orchestration file defining services, networks, volumes, and secrets
-- **`srcs/requirements/nginx/`**: Nginx reverse proxy container
-  - `Dockerfile`: Builds Alpine-based Nginx image with SSL support
-  - `conf/nginx.conf`: Nginx configuration for SSL termination and PHP-FPM proxying
-  - `tools/generate_ssl.sh`: Script to generate self-signed SSL certificates
-- **`srcs/requirements/wordpress/`**: WordPress PHP-FPM container
-  - `Dockerfile`: Builds Alpine-based PHP-FPM image with WordPress dependencies
-  - `tools/wp_setup.sh`: Script to download WordPress and configure it on first run
-- **`srcs/requirements/mariadb/`**: MariaDB database container
-  - `Dockerfile`: Builds Alpine-based MariaDB image
-  - `tools/init_db.sh`: Script to initialize database and create WordPress user
-- **`secrets/`**: Directory containing sensitive password files (should be in .gitignore)
+# Set proper permissions
+chmod 755 /home/your_login/data/*
+```
 
-### Main Design Choices
+#### 5. Build and Start Services
 
-1. **Alpine Linux base images**: Chosen for minimal size and security, reducing attack surface
-2. **Multi-stage setup scripts**: Initialization scripts handle first-run configuration automatically
-3. **Named volumes**: Used for data persistence, allowing containers to be recreated without data loss
-4. **Bridge network**: Custom Docker network isolates services while allowing communication
-5. **SSL/TLS termination**: Nginx handles SSL, offloading encryption from PHP-FPM
-6. **Secrets management**: Docker secrets used for sensitive passwords instead of environment variables
-7. **User permissions**: Both Nginx and PHP-FPM run as `www-data` user for security and file access
+```bash
+# Navigate to srcs directory
+cd srcs
 
-### Comparisons
+# Build images and start containers
+make up
 
-#### Virtual Machines vs Docker
+# Or using docker compose directly
+docker compose up -d --build
+```
 
-**Virtual Machines:**
-- Full OS emulation with hypervisor
-- Heavy resource usage (RAM, disk, CPU)
-- Slower startup times (minutes)
-- Complete isolation and security
-- Larger image sizes (GBs)
-- Better for running different operating systems
+#### 6. Access the Application
 
-**Docker Containers:**
-- OS-level virtualization sharing host kernel
-- Lightweight resource usage
-- Fast startup times (seconds)
-- Process-level isolation
-- Small image sizes (MBs)
-- Better for application deployment and microservices
+```bash
+# Add to /etc/hosts (Linux/macOS)
+echo "127.0.0.1 yourdomain.42.fr" | sudo tee -a /etc/hosts
 
-**Choice Rationale**: Docker is chosen here because we need lightweight, fast containers for a web application stack running on the same OS. VMs would add unnecessary overhead and complexity.
+# Access in browser
+# Website: https://yourdomain.42.fr
+# WordPress Admin: https://yourdomain.42.fr/wp-admin
+```
 
-#### Secrets vs Environment Variables
+## 🔧 Common Commands
 
-**Environment Variables:**
-- Visible in container inspection (`docker inspect`)
-- Appear in process lists (`ps aux`)
-- Logged in various places (shell history, Docker logs)
-- Easy to accidentally expose (in Dockerfiles, docker-compose.yml)
-- No encryption at rest
-- Simple to use
+### Using Make
 
-**Docker Secrets:**
-- Stored separately from container definitions
-- Mounted as files in `/run/secrets/` (read-only)
-- Not visible in process lists or environment inspection
-- Can be encrypted at rest
-- Better security practices
-- Slightly more complex setup
+```bash
+make up               # Build and start all services
+make down             # Stop and remove containers
+make re               # Restart services
+make logs             # View container logs
+make clean            # Remove containers and volumes
+make fclean           # Full clean (remove images too)
+make set-port PORT=3000  # Change NGINX port
+```
 
-**Choice Rationale**: Secrets are used for database passwords because they contain sensitive credentials that shouldn't be visible in container metadata or logs. Environment variables are used for non-sensitive configuration like database names and usernames.
+### Using Docker Compose
 
-#### Docker Network vs Host Network
+```bash
+# Start services
+docker compose up -d
 
-**Docker Bridge Network (Custom):**
-- Isolation: Services only accessible within the network
-- Port mapping required for external access
-- DNS-based service discovery (service names as hostnames)
-- Network policies and segmentation possible
-- Security: Internal services not exposed to host network
-- Better for multi-container applications
+# Stop services
+docker compose down
 
-**Host Network:**
-- Direct access to host network stack
-- No port mapping needed
-- No DNS-based service discovery
-- Less isolation and security
-- Simpler networking
-- Better for single-container or performance-critical applications
+# View logs
+docker compose logs -f
 
-**Choice Rationale**: A custom bridge network (`inception`) is used to isolate services while allowing them to communicate using service names (e.g., `mariadb`, `wordpress`). This provides better security and follows Docker best practices.
+# Restart service
+docker compose restart wordpress
 
-#### Docker Volumes vs Bind Mounts
+# View status
+docker compose ps
 
-**Docker Volumes:**
-- Managed by Docker (created in `/var/lib/docker/volumes/`)
-- Platform independent
-- Can be backed up/restored with Docker commands
-- Better performance on Linux
-- Volume lifecycle independent of containers
-- More portable across systems
-- Anonymous or named volumes
+# Execute command in container
+docker compose exec wordpress wp --allow-root list users
+```
 
-**Bind Mounts:**
-- Direct mapping to host filesystem paths
-- Platform dependent (path differences)
-- Managed manually by user
-- Immediate visibility on host
-- Useful for development (live code editing)
-- Less portable
-- Security concerns (permissions, SELinux)
+### Database Management
 
-**Choice Rationale**: Named Docker volumes (`mariadb_data`, `wordpress_data`) are used because:
-- Data persistence is required regardless of container lifecycle
-- Better performance for database operations
-- Automatic management and backup capabilities
-- No need for direct host filesystem access in production
-- More secure (Docker manages permissions)
+```bash
+# Access MariaDB CLI
+docker compose exec mariadb mariadb -u root -p
 
-## Resources
+# Backup database
+docker compose exec mariadb mysqldump -u root -p wordpress > backup.sql
 
-### Documentation
+# Restore database
+docker compose exec -T mariadb mysql -u root -p < backup.sql
+```
 
-- [Docker Official Documentation](https://docs.docker.com/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [Nginx Documentation](https://nginx.org/en/docs/)
-- [WordPress Documentation](https://wordpress.org/support/)
-- [MariaDB Documentation](https://mariadb.com/kb/en/documentation/)
-- [PHP-FPM Documentation](https://www.php.net/manual/en/install.fpm.php)
-- [Docker Secrets](https://docs.docker.com/engine/swarm/secrets/)
-- [Docker Volumes](https://docs.docker.com/storage/volumes/)
-- [Docker Networks](https://docs.docker.com/network/)
+## 📋 Configuration Details
 
-### Articles and Tutorials
+### Docker Compose Services
 
-- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
-- [Nginx SSL Configuration](https://nginx.org/en/docs/http/configuring_https_servers.html)
-- [WordPress Security Hardening](https://wordpress.org/support/article/hardening-wordpress/)
-- [Container Security](https://docs.docker.com/engine/security/)
+| Service | Image | Purpose | Ports |
+|---------|-------|---------|-------|
+| Nginx | Alpine + Nginx | Reverse proxy, SSL termination | 443 (external) |
+| WordPress | Alpine + PHP-FPM | CMS application | 9000 (internal) |
+| MariaDB | Alpine + MariaDB | Database | 3306 (internal) |
 
-### AI Usage
+### Nginx Configuration
 
-AI assistance was used in the following parts of this project:
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.42.fr;
+    
+    ssl_certificate /etc/nginx/ssl/yourdomain.42.fr.crt;
+    ssl_key /etc/nginx/ssl/yourdomain.42.fr.key;
+    
+    root /var/www/wordpress;
+    index index.php;
+    
+    # PHP handling
+    location ~ \.php$ {
+        fastcgi_pass wordpress:9000;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    }
+    
+    # Static files
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg)$ {
+        expires 365d;
+    }
+}
+```
 
-- **Configuration debugging**: AI helped identify and resolve permission issues (403 errors) between Nginx and WordPress containers by analyzing user/group configurations
-- **Documentation structure**: AI assisted in structuring and formatting the README and documentation files according to project requirements
-- **Best practices validation**: AI provided guidance on Docker best practices for security, networking, and volume management
-- **Code review**: AI helped review Dockerfiles and scripts for optimization and security improvements
+## 🐳 Docker Concepts
 
-**Note**: While AI was used as a development aid, all architectural decisions, code implementations, and final configurations were reviewed and validated by the project author.
-### Changing the HTTPS Port Later
+### Containers vs Images
 
-To update the HTTPS port after the initial setup:
-1. Run `make set-port PORT=3000` (replace `3000` with any port between 1 and 65535). The target updates `.env` and recreates the `nginx` container with the new mapping.
-2. Access the site via `https://<domain>:<PORT>` whenever you use a non-443 port, and ensure that port is open in your firewall and DNS records.
+| Aspect | Image | Container |
+|--------|-------|-----------|
+| Definition | Blueprint | Running instance |
+| Persistence | Permanent | Temporary |
+| Size | Smaller | Larger |
+| Creation | `docker build` | `docker run` |
+
+### Volumes
+
+```bash
+# Named volume
+volumes:
+  my_data:
+
+# Bind mount (host path)
+volumes:
+  - /host/path:/container/path
+```
+
+### Networking
+
+- **Bridge** - Default, containers communicate
+- **Host** - Share host network
+- **None** - Isolated network
+- **Custom** - User-defined network (recommended)
+
+## 🔒 Security Best Practices
+
+### Secrets Management
+- ✅ Store passwords in `/secrets/` directory
+- ✅ Use `.env` files (never commit secrets)
+- ✅ Use Docker secrets (production)
+- ✅ Rotate passwords regularly
+
+### Container Security
+- ✅ Run as non-root user
+- ✅ Use minimal base images (alpine)
+- ✅ Regular security updates
+- ✅ Read-only filesystems where possible
+
+### SSL Certificate Generation
+
+```bash
+# Generate self-signed certificate
+openssl req -x509 -days 365 -nodes \
+    -newkey rsa:2048 \
+    -keyout cert.key \
+    -out cert.crt \
+    -subj "/C=ES/ST=Madrid/L=Madrid/O=42/CN=yourdomain.42.fr"
+```
+
+## 🧪 Testing & Debugging
+
+### Health Checks
+
+```bash
+# Check if services are running
+docker compose ps
+
+# View service health
+docker compose exec nginx curl -I https://localhost/
+
+# Check database connectivity
+docker compose exec wordpress mysql -h mariadb -u root -p -e "SHOW DATABASES;"
+```
+
+### Logs
+
+```bash
+# View logs for all services
+docker compose logs
+
+# Follow logs in real-time
+docker compose logs -f
+
+# View logs for specific service
+docker compose logs -f wordpress
+
+# View last 100 lines
+docker compose logs --tail=100
+```
+
+### Container Shell
+
+```bash
+# Access Nginx container
+docker compose exec nginx sh
+
+# Access WordPress container
+docker compose exec wordpress bash
+
+# Access MariaDB container
+docker compose exec mariadb bash
+```
+
+## 🛡️ Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Port already in use | Change NGINX_PORT in .env |
+| Containers won't start | Check logs: `docker compose logs` |
+| Database connection fails | Verify DB_HOST matches service name |
+| Permission denied on volumes | Check host directory ownership |
+| SSL certificate errors | Regenerate SSL certificate |
+| WordPress database empty | Run WP installation script |
+
+## 📚 Key Docker Commands
+
+```bash
+# Image management
+docker build -t name:tag .
+docker images
+docker rmi image_id
+
+# Container management
+docker run -d --name container_name image:tag
+docker ps -a
+docker stop container_id
+docker rm container_id
+
+# Compose management
+docker compose up -d
+docker compose down -v
+docker compose logs -f
+
+# Inspection
+docker inspect container_id
+docker stats
+docker top container_id
+```
+
+## 📝 Notes
+
+- All Dockerfiles use multi-stage builds for efficiency
+- Containers run non-root services for security
+- Volumes persist data between restarts
+- SSL generated automatically on first run
+- Database initialized automatically on first start
+
+## 🎓 Learning Outcomes
+
+After completing this project, you will understand:
+- Docker containerization fundamentals
+- Multi-container orchestration with Compose
+- Dockerfile best practices and multi-stage builds
+- Volume and network management
+- SSL/TLS configuration
+- Environment management and secrets
+- Service communication patterns
+- Infrastructure as Code principles
+
+## 📌 Status
+
+✅ **Completed** - Full Docker stack with Nginx, WordPress, and MariaDB
+
+## 👥 Author
+
+Created by [alphbarry](https://github.com/alphbarry) as part of the 42 curriculum.
+
+---
+
+For detailed documentation, see:
+- [USER_DOC.md](USER_DOC.md) - User guide
+- [DEV_DOC.md](DEV_DOC.md) - Developer guide
