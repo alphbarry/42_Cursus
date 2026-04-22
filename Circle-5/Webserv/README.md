@@ -459,6 +459,7 @@ clang++ -Wall -Wextra -Werror -std=c++98 -Iinclude src/*.cpp -o webserv
 ## 👥 Authors
 
 Developed in collaboration with:
+- [mgimon](https://github.com/mgimon)
 - [daortega](https://github.com/DavidOrtegaGarcia)
 - [alphbarry](https://github.com/alphbarry)
 
