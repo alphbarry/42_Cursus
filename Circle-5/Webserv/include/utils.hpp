@@ -1,0 +1,52 @@
+#ifndef UTILS_HPP
+#define UTILS_HPP
+
+#include <string>
+#include <vector>
+#include <sstream>
+#include <iostream>
+#include <fstream>
+#include <cstring>
+#include <dirent.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <libgen.h>
+#include <list>
+
+#include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
+#include "ServerConfig.hpp"
+#include "initServer.hpp"
+#include "utilsCC.hpp"
+#include "CGI.hpp"
+
+namespace utils {
+
+    void printLocation(const LocationConfig *location);
+    bool isCompleteRequest(const std::string& str);
+    void readFromSocket(t_fd_data *fd_data, t_client_socket *client_socket, int epoll_fd, std::map<int, t_fd_data *> &map_fds);
+
+    int respondGet(ServerConfig &serverOne, int client_fd, std::string path, const HttpRequest &http_request, HttpResponse &http_response);
+    int	respond(t_server_context &server_context, t_client_socket *client_socket, int client_fd, const HttpRequest &http_request, ServerConfig &serverOne);
+    int respondCGI(t_server_context &server_context, t_client_socket *client_socket);
+    void handleClientSocket(t_fd_data &fd_data, uint32_t &events, t_server_context &server_context);
+
+    std::string generateAutoindexRoot(const std::string& Path, const std::string& directory);
+    std::string generateAutoindexLocation(const std::string& dirPath);
+    const LocationConfig* locationMatchforRequest(const std::string &request_path, const std::vector<LocationConfig> &locations);
+    std::string getErrorPath(ServerConfig &serverOne, int errcode);
+    void hardcodeMultipleLocServer(ServerConfig &server);
+    bool isDirectory(const std::string& path);
+    std::string getRedirectMessage(int code);
+    bool hasWXPermission(const std::string &path);
+    char toLowerChar(char c);
+    std::string getDirectoryName(const std::string &path);
+    int checkConnectionClose(const HttpRequest &http_request, HttpResponse &http_response);
+    std::string getCgiScriptNameFromPath(const std::string &path);
+    std::string getCgiScriptPathFromPath(const std::string &path);
+    std::string toUpper(const std::string& str);
+}
+
+#endif

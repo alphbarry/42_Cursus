@@ -1,0 +1,112 @@
+#pragma once
+
+#include "ServerConfig.hpp"
+
+#include <netdb.h>
+#include <list>
+#include <map>
+#include <fcntl.h>
+#include <sys/epoll.h>
+#include <cerrno>
+
+#define MAX_EVENTS 512
+#define CGI_TIMEOUT 10 //seconds
+#define KEEPALIVE_TIMEOUT 15
+
+enum FDType 
+{
+    LISTEN_SOCKET,
+    CLIENT_SOCKET,
+	CGI_PIPE_WRITE,
+	CGI_PIPE_READ
+};
+
+typedef struct s_client_socket
+{
+	int				socket_fd;
+	ServerConfig&	server;
+	time_t 			last_activity_time;
+	std::string		readBuffer;
+	std::string		sendBuffer;
+	bool			cgi;
+	pid_t pid;
+
+	//Constructor
+	s_client_socket(int fd, ServerConfig& srv) : 
+        socket_fd(fd), 
+        server(srv),
+		last_activity_time(time(NULL)),
+        readBuffer(""),
+		sendBuffer(""),
+		cgi(false),
+		pid(-1) {}
+}	t_client_socket;
+
+typedef struct s_CGI_pipe_read
+{
+	int fd;
+	pid_t pid;
+	t_client_socket *client_socket;
+
+	//Constructor
+	s_CGI_pipe_read(int fd_in, pid_t pid_CGI, t_client_socket *conexion_socket) : 
+        fd(fd_in),
+        pid(pid_CGI),
+		client_socket(conexion_socket) {}
+}	t_CGI_pipe_read;
+
+typedef struct s_CGI_pipe_write
+{
+	int fd;
+	std::string request_body;
+	size_t content_length;
+	size_t sended;
+	pid_t pid;
+	t_client_socket *client_socket;
+
+	//Constructor
+	s_CGI_pipe_write(int fd_pipe, std::string body, int body_length, pid_t pid_CGI,
+	 				t_client_socket *conexion_socket) : 
+        fd(fd_pipe),
+		request_body(body),
+		content_length(body_length),
+		sended(0),
+        pid(pid_CGI),
+		client_socket(conexion_socket) {}
+}	t_CGI_pipe_write;
+
+typedef struct s_listen_socket
+{
+	int				socket_fd;
+	ServerConfig&	server;
+
+	//Constructor
+	s_listen_socket(int fd, ServerConfig& srv) : 
+        socket_fd(fd), 
+        server(srv) {}
+}	t_listen_socket;
+
+typedef struct s_fd_data
+{
+	void*	data;
+	FDType 	type;
+
+}	t_fd_data;
+
+typedef struct s_pid_context 
+{
+	time_t last_activity_time;
+	int pipe_write_fd;
+	int pipe_read_fd;
+	int client_socket_fd;
+	bool write_finished;
+}	t_pid_context;
+
+typedef struct s_server_context 
+{
+    int epoll_fd;
+    std::map<int, t_fd_data> &map_fds;
+    std::map<pid_t, t_pid_context> &map_pids;
+}	t_server_context;
+
+void initServer(std::vector<ServerConfig> &serverList);
